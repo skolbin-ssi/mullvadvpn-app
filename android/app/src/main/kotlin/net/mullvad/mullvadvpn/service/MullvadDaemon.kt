@@ -122,7 +122,9 @@ class MullvadDaemon(vpnService: MullvadVpnService) {
         return listDevices(daemonInterfaceAddress, accountToken)
     }
 
-    fun getDevice(): AccountAndDevice? = getDevice(daemonInterfaceAddress)
+    fun getDevice(): AccountAndDevice? = getDevice(daemonInterfaceAddress).also {
+        _deviceStateUpdates.tryEmit(DeviceState.from(it))
+    }
 
     fun refreshDevice() {
         updateDevice(daemonInterfaceAddress)
