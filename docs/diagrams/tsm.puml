@@ -1,0 +1,33 @@
+@startuml
+hide empty description
+
+left to right direction
+
+title Various tunnel state transitions
+
+state "Disconnected state" as disconnected_state
+state "Disconnecting state" as disconnecting_state
+state "Error state" as error_state #green
+state "Connecting state" as connecting_state #green
+state "Connected state" as connected_state #green
+
+
+[*] --> disconnected_state
+disconnected_state --> connecting_state
+connecting_state --> connected_state
+connecting_state --> disconnecting_state
+connected_state --> disconnecting_state
+disconnecting_state --> disconnected_state
+
+disconnected_state --> error_state
+disconnecting_state --> error_state
+connecting_state --> error_state
+connected_state --> error_state
+disconnected_state --> [*]
+
+legend
+  Green states imply that firewall rules are active.
+end legend
+
+
+@enduml
