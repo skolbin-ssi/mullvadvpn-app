@@ -54,6 +54,27 @@
 !define PERSISTENT_BLOCK_OUTBOUND_IPV4_FILTER_GUID "{79860c64-9a5e-48a3-b5f3-d64b41659aa5}"
 
 #
+# CleanupTempFiles
+#
+# Cleanup files used temporarily by the installer.
+#
+!macro CleanupTempFiles
+
+	# The working directory cannot be deleted, so make sure it's set to $TEMP.
+	SetOutPath "$TEMP"
+
+	RMDir /r "$TEMP\mullvad-split-tunnel"
+	Delete "$TEMP\wintun.dll"
+	Delete "$TEMP\mullvad-wireguard.dll"
+	Delete "$TEMP\driverlogic.exe"
+	Delete "$TEMP\mullvad-setup.exe"
+	Delete "$TEMP\winfw.dll"
+
+!macroend
+
+!define CleanupTempFiles '!insertmacro "CleanupTempFiles"'
+
+#
 # ExtractWireGuard
 #
 # Extract Wintun and WireGuardNT installer into $TEMP
@@ -897,10 +918,15 @@
 	${FirewallWarningCheck}
 	${ExtractMullvadSetup}
 	${ClearFirewallRules}
+	log::SetLogTarget ${LOG_VOID}
+	${CleanupTempFiles}
 
 	Abort
 
 	customInstall_skip_abort:
+
+	log::SetLogTarget ${LOG_VOID}
+	${CleanupTempFiles}
 
 	Pop $R0
 
@@ -943,6 +969,9 @@
 	${FirewallWarningCheck}
 	${ExtractMullvadSetup}
 	${ClearFirewallRules}
+
+	log::SetLogTarget ${LOG_VOID}
+	${CleanupTempFiles}
 
 	MessageBox MB_OK "Failed to uninstall a previous version. Contact support or review the logs for more information."
 	SetErrorLevel 5
@@ -1161,6 +1190,10 @@
 	${EndIf}
 
 	log::Log "Aborting uninstaller"
+
+	log::SetLogTarget ${LOG_VOID}
+	${CleanupTempFiles}
+
 	SetErrorLevel 1
 	Abort
 
@@ -1195,6 +1228,8 @@
 		SetShellVarContext all
 		Delete "$LOCALAPPDATA\Mullvad VPN\uninstall.log"
 	${EndIf}
+
+	${CleanupTempFiles}
 
 	Pop $R0
 	Pop $1
