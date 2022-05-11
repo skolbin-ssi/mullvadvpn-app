@@ -61,6 +61,25 @@ impl fmt::Display for DevicePort {
     }
 }
 
+/// Contains a device state.
+#[derive(Debug, Clone, Deserialize, Serialize, PartialEq)]
+#[serde(rename_all = "snake_case")]
+#[cfg_attr(target_os = "android", jnix(package = "net.mullvad.mullvadvpn.model"))]
+pub enum DeviceState {
+    LoggedIn(AccountAndDevice),
+    LoggedOut,
+    Revoked,
+}
+
+impl DeviceState {
+    pub fn into_device(self) -> Option<AccountAndDevice> {
+        match self {
+            DeviceState::LoggedIn(dev) => Some(dev),
+            _ => None,
+        }
+    }
+}
+
 /// A [Device] and its associated account token.
 #[derive(Debug, Clone, Deserialize, Serialize, PartialEq)]
 #[cfg_attr(target_os = "android", derive(IntoJava))]
@@ -83,29 +102,26 @@ impl AccountAndDevice {
 #[derive(Clone, Debug)]
 #[cfg_attr(target_os = "android", derive(IntoJava))]
 #[cfg_attr(target_os = "android", jnix(package = "net.mullvad.mullvadvpn.model"))]
-pub struct DeviceEvent {
-    /// Device that was affected.
-    pub device: Option<AccountAndDevice>,
-    /// Indicates whether the change was initiated remotely or by the daemon.
-    pub remote: bool,
+pub enum DeviceEvent {
+    /// The device was removed due to user (or daemon) action.
+    Logout,
+    /// Logged in on a new device.
+    Login(AccountAndDevice),
+    /// The device was updated remotely, but not its key.
+    Updated(AccountAndDevice),
+    /// The key was rotated.
+    RotatedKey(AccountAndDevice),
+    /// Device was removed because it was not found remotely.
+    Revoked,
 }
 
 impl DeviceEvent {
-    pub fn new(device: Option<AccountAndDevice>, remote: bool) -> DeviceEvent {
-        DeviceEvent { device, remote }
-    }
-
-    pub fn from_device(device: AccountAndDevice, remote: bool) -> DeviceEvent {
-        DeviceEvent {
-            device: Some(device),
-            remote,
-        }
-    }
-
-    pub fn revoke(remote: bool) -> Self {
-        Self {
-            device: None,
-            remote,
+    pub fn into_device(self) -> Option<AccountAndDevice> {
+        match self {
+            DeviceEvent::Login(dev) | DeviceEvent::Updated(dev) | DeviceEvent::RotatedKey(dev) => {
+                Some(dev)
+            }
+            DeviceEvent::Revoked | DeviceEvent::Logout => None,
         }
     }
 }

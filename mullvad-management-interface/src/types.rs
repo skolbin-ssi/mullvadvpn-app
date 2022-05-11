@@ -227,14 +227,50 @@ impl From<mullvad_types::device::DevicePort> for DevicePort {
     }
 }
 
+impl From<mullvad_types::device::DeviceState> for DeviceState {
+    fn from(state: mullvad_types::device::DeviceState) -> Self {
+        DeviceState {
+            state: device_state::State::from(&state) as i32,
+            device: state.into_device().map(|device| AccountAndDevice {
+                account_token: device.account_token,
+                device: Some(Device::from(device.device)),
+            }),
+        }
+    }
+}
+
+impl From<&mullvad_types::device::DeviceState> for device_state::State {
+    fn from(state: &mullvad_types::device::DeviceState) -> Self {
+        use mullvad_types::device::DeviceState as MullvadState;
+        match state {
+            MullvadState::LoggedIn(_) => device_state::State::LoggedIn,
+            MullvadState::LoggedOut => device_state::State::LoggedOut,
+            MullvadState::Revoked => device_state::State::Revoked,
+        }
+    }
+}
+
 impl From<mullvad_types::device::DeviceEvent> for DeviceEvent {
     fn from(event: mullvad_types::device::DeviceEvent) -> Self {
         DeviceEvent {
-            device: event.device.map(|config| DeviceConfig {
-                account_token: config.account_token,
-                device: Some(Device::from(config.device)),
+            event: device_event::Event::from(&event) as i32,
+            device: event.into_device().map(|device| AccountAndDevice {
+                account_token: device.account_token,
+                device: Some(Device::from(device.device)),
             }),
-            remote: event.remote,
+        }
+    }
+}
+
+impl From<&mullvad_types::device::DeviceEvent> for device_event::Event {
+    fn from(event: &mullvad_types::device::DeviceEvent) -> Self {
+        use mullvad_types::device::DeviceEvent as MullvadEvent;
+        match event {
+            MullvadEvent::Logout => device_event::Event::Logout,
+            MullvadEvent::Login(_) => device_event::Event::Login,
+            MullvadEvent::Updated(_) => device_event::Event::Updated,
+            MullvadEvent::RotatedKey(_) => device_event::Event::RotatedKey,
+            MullvadEvent::Revoked => device_event::Event::Revoked,
         }
     }
 }
@@ -249,9 +285,9 @@ impl From<mullvad_types::device::RemoveDeviceEvent> for RemoveDeviceEvent {
     }
 }
 
-impl From<mullvad_types::device::AccountAndDevice> for DeviceConfig {
+impl From<mullvad_types::device::AccountAndDevice> for AccountAndDevice {
     fn from(device: mullvad_types::device::AccountAndDevice) -> Self {
-        DeviceConfig {
+        AccountAndDevice {
             account_token: device.account_token,
             device: Some(Device::from(device.device)),
         }
