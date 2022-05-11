@@ -253,24 +253,21 @@ impl From<&mullvad_types::device::DeviceState> for device_state::State {
 impl From<mullvad_types::device::DeviceEvent> for DeviceEvent {
     fn from(event: mullvad_types::device::DeviceEvent) -> Self {
         DeviceEvent {
-            event: device_event::Event::from(&event) as i32,
-            device: event.into_device().map(|device| AccountAndDevice {
-                account_token: device.account_token,
-                device: Some(Device::from(device.device)),
-            }),
+            cause: device_event::Cause::from(event.cause) as i32,
+            new_state: Some(DeviceState::from(event.new_state)),
         }
     }
 }
 
-impl From<&mullvad_types::device::DeviceEvent> for device_event::Event {
-    fn from(event: &mullvad_types::device::DeviceEvent) -> Self {
-        use mullvad_types::device::DeviceEvent as MullvadEvent;
-        match event {
-            MullvadEvent::Logout => device_event::Event::Logout,
-            MullvadEvent::Login(_) => device_event::Event::Login,
-            MullvadEvent::Updated(_) => device_event::Event::Updated,
-            MullvadEvent::RotatedKey(_) => device_event::Event::RotatedKey,
-            MullvadEvent::Revoked => device_event::Event::Revoked,
+impl From<mullvad_types::device::DeviceEventCause> for device_event::Cause {
+    fn from(cause: mullvad_types::device::DeviceEventCause) -> Self {
+        use mullvad_types::device::DeviceEventCause as MullvadEvent;
+        match cause {
+            MullvadEvent::LoggedIn => device_event::Cause::LoggedIn,
+            MullvadEvent::LoggedOut => device_event::Cause::LoggedOut,
+            MullvadEvent::Revoked => device_event::Cause::Revoked,
+            MullvadEvent::Updated => device_event::Cause::Updated,
+            MullvadEvent::RotatedKey => device_event::Cause::RotatedKey,
         }
     }
 }

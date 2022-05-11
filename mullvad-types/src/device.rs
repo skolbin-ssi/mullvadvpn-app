@@ -98,32 +98,30 @@ impl AccountAndDevice {
     }
 }
 
+/// Reason why a [DeviceEvent] was emitted.
+#[derive(Clone, Debug)]
+#[cfg_attr(target_os = "android", derive(IntoJava))]
+#[cfg_attr(target_os = "android", jnix(package = "net.mullvad.mullvadvpn.model"))]
+pub enum DeviceEventCause {
+    /// Logged in on a new device.
+    LoggedIn,
+    /// The device was removed due to user (or daemon) action.
+    LoggedOut,
+    /// Device was removed because it was not found remotely.
+    Revoked,
+    /// The device was updated, but not its key.
+    Updated,
+    /// The key was rotated.
+    RotatedKey,
+}
+
 /// Emitted when logging in or out of an account, or when the device changes.
 #[derive(Clone, Debug)]
 #[cfg_attr(target_os = "android", derive(IntoJava))]
 #[cfg_attr(target_os = "android", jnix(package = "net.mullvad.mullvadvpn.model"))]
-pub enum DeviceEvent {
-    /// The device was removed due to user (or daemon) action.
-    Logout,
-    /// Logged in on a new device.
-    Login(AccountAndDevice),
-    /// The device was updated remotely, but not its key.
-    Updated(AccountAndDevice),
-    /// The key was rotated.
-    RotatedKey(AccountAndDevice),
-    /// Device was removed because it was not found remotely.
-    Revoked,
-}
-
-impl DeviceEvent {
-    pub fn into_device(self) -> Option<AccountAndDevice> {
-        match self {
-            DeviceEvent::Login(dev) | DeviceEvent::Updated(dev) | DeviceEvent::RotatedKey(dev) => {
-                Some(dev)
-            }
-            DeviceEvent::Revoked | DeviceEvent::Logout => None,
-        }
-    }
+pub struct DeviceEvent {
+    pub cause: DeviceEventCause,
+    pub new_state: DeviceState,
 }
 
 /// Emitted when a device is removed using the `RemoveDevice` RPC.

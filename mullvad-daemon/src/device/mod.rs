@@ -8,7 +8,8 @@ use mullvad_api::rest;
 use mullvad_types::{
     account::AccountToken,
     device::{
-        AccountAndDevice, Device, DeviceEvent, DeviceId, DeviceName, DevicePort, DeviceState,
+        AccountAndDevice, Device, DeviceEvent, DeviceEventCause, DeviceId, DeviceName, DevicePort,
+        DeviceState,
     },
     wireguard::{self, RotationInterval, WireguardData},
 };
@@ -208,30 +209,30 @@ impl From<PrivateDevice> for Device {
 
 #[derive(Clone)]
 pub(crate) enum PrivateDeviceEvent {
-    /// The device was removed due to user (or daemon) action.
-    Logout,
     /// Logged in on a new device.
     Login(PrivateAccountAndDevice),
+    /// The device was removed due to user (or daemon) action.
+    Logout,
+    /// Device was removed because it was not found remotely.
+    Revoked,
     /// The device was updated remotely, but not its key.
     Updated(PrivateAccountAndDevice),
     /// The key was rotated.
     RotatedKey(PrivateAccountAndDevice),
-    /// Device was removed because it was not found remotely.
-    Revoked,
 }
 
 impl From<PrivateDeviceEvent> for DeviceEvent {
     fn from(event: PrivateDeviceEvent) -> DeviceEvent {
-        match event {
-            PrivateDeviceEvent::Logout => DeviceEvent::Logout,
-            PrivateDeviceEvent::Login(config) => DeviceEvent::Login(AccountAndDevice::from(config)),
-            PrivateDeviceEvent::Updated(config) => {
-                DeviceEvent::Updated(AccountAndDevice::from(config))
-            }
-            PrivateDeviceEvent::RotatedKey(config) => {
-                DeviceEvent::RotatedKey(AccountAndDevice::from(config))
-            }
-            PrivateDeviceEvent::Revoked => DeviceEvent::Revoked,
+        let cause = match event {
+            PrivateDeviceEvent::Login(_) => DeviceEventCause::LoggedIn,
+            PrivateDeviceEvent::Logout => DeviceEventCause::LoggedOut,
+            PrivateDeviceEvent::Revoked => DeviceEventCause::Revoked,
+            PrivateDeviceEvent::Updated(_) => DeviceEventCause::Updated,
+            PrivateDeviceEvent::RotatedKey(_) => DeviceEventCause::RotatedKey,
+        };
+        DeviceEvent {
+            cause,
+            new_state: DeviceState::from(event.state()),
         }
     }
 }

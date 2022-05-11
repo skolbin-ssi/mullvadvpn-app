@@ -40,7 +40,7 @@ use mullvad_relay_selector::{
 };
 use mullvad_types::{
     account::{AccountData, AccountToken, VoucherSubmission},
-    device::{Device, DeviceEvent, DeviceId, DeviceState, RemoveDeviceEvent},
+    device::{Device, DeviceEvent, DeviceEventCause, DeviceId, DeviceState, RemoveDeviceEvent},
     location::GeoIpLocation,
     relay_constraints::{BridgeSettings, BridgeState, ObfuscationSettings, RelaySettingsUpdate},
     relay_list::RelayList,
@@ -1087,7 +1087,10 @@ where
                     error.display_chain_with_msg("Failed to move over account from old settings")
                 );
                 // Synthesize a logout event.
-                event_listener.notify_device_event(DeviceEvent::Logout);
+                event_listener.notify_device_event(DeviceEvent {
+                    cause: DeviceEventCause::LoggedOut,
+                    new_state: DeviceState::LoggedOut,
+                });
             }
         });
     }
