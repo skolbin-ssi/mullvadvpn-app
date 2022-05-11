@@ -384,7 +384,8 @@ for semver_path in dist/*"$SEMVER_VERSION"*; do
     # If there is a tag for this commit then we append that to the produced artifacts
     # We don't want to change the actual PRODUCT_VERSION as metadata in the form of +<metadata> is ignored by electron builder etc
     version_suffix=""
-    if [[ -n "$current_head_commit_tag" ]]; then
+    # A version suffix should only be created if there is a tag for this commit and it is not a release build
+    if [[ -n "$current_head_commit_tag" && "$IS_RELEASE" != "true" ]]; then
         # Remove disallowed version characters from the tag
         version_suffix="+${current_head_commit_tag//[^0-9a-z_-]/}"
     fi
